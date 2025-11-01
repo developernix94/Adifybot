@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Adify Bot — Telegram Mini App</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card: #fff;
+      --accent: #2563eb;
+      --muted: #6b7280;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: var(--bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    main {
+      background: var(--card);
+      border-radius: 18px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      width: 92%;
+      max-width: 480px;
+      padding: 22px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0;
+      color: var(--accent);
+      font-size: 1.6rem;
+    }
+    p {
+      color: var(--muted);
+      margin-top: 4px;
+      margin-bottom: 16px;
+    }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin: 5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.03);
+    }
+    button[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    #log {
+      text-align: left;
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 15px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 13px;
+      color: #374151;
+    }
+    footer {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Adify Bot</h1>
+    <p>Welcome to your Telegram Mini App with Monetag integration!</p>
+
+    <div id="userInfo">Not connected to Telegram yet.</div>
+
+    <div style="margin-top: 14px;">
+      <button id="btnInit">Connect Telegram</button>
+      <button id="btnSend" disabled>Send Data to Bot</button>
+      <button id="btnAd">Show Monetag Ad</button>
+    </div>
+
+    <div id="log"><b>Log:</b><br /></div>
+
+    <footer>
+      © 2025 Adify Bot | Powered by Monetag & Telegram
+    </footer>
+  </main>
+
+  <script>
+    /* =================== Monetag Loader =================== */
+    const MONETAG_SCRIPT_URL = ""; // Example: 'https://cdn.monetag.io/sdk.js'
+
+    function loadMonetag(url) {
+      return new Promise(resolve => {
+        if (!url) {
+          window.Monetag = { showAd: () => Promise.resolve("Monetag stub: no URL") };
+          return resolve("stub");
+        }
+        const s = document.createElement("script");
+        s.src = url;
+        s.onload = () => resolve("loaded");
+        s.onerror = () => {
+          window.Monetag = { showAd: () => Promise.resolve("load error") };
+          resolve("failed");
+        };
+        document.head.appendChild(s);
+      });
+    }
+
+    /* =================== Telegram Mini App =================== */
+    function log(msg) {
+      const el = document.getElementById("log");
+      el.innerHTML = `<div>${new Date().toLocaleTimeString()} — ${msg}</div>` + el.innerHTML;
+    }
+
+    async function initTelegram() {
+      if (!window.Telegram || !window.Telegram.WebApp) {
+        log("⚠️ Telegram WebApp not found. Please open this inside Telegram.");
+        return;
+      }
+      const WebApp = window.Telegram.WebApp;
+      WebApp.expand();
+      const user = WebApp.initDataUnsafe?.user;
+      document.getElementById("userInfo").innerText = user
+        ? `Hello ${user.first_name} (@${user.username || "no username"})`
+        : "User info not available.";
+      document.getElementById("btnSend").disabled = false;
+      log("✅ Telegram initialized.");
+    }
+
+    function sendToBot() {
+      const WebApp = window.Telegram?.WebApp;
+      if (!WebApp) return log("❌ Telegram not connected.");
+      const payload = { action: "reward_request", time: Date.now() };
+      WebApp.sendData(JSON.stringify(payload));
+      log("📤 Sent data to bot: " + JSON.stringify(payload));
+    }
+
+    async function showAd() {
+      if (!window.Monetag?.showAd) return log("⚠️ Monetag not ready.");
+      log("🪄 Showing Monetag ad...");
+      const res = await window.Monetag.showAd();
+      log("🎯 Monetag response: " + res);
+    }
+
+    /* =================== Events =================== */
+    document.getElementById("btnInit").addEventListener("click", initTelegram);
+    document.getElementById("btnSend").addEventListener("click", sendToBot);
+    document.getElementById("btnAd").addEventListener("click", showAd);
+
+    /* =================== Init =================== */
+    loadMonetag(MONETAG_SCRIPT_URL).then(st => log("🧩 Monetag loader: " + st));
+    window.addEventListener("DOMContentLoaded", () => {
+      if (window.Telegram?.WebApp) initTelegram();
+    });
+  </script>
+</body>
+</html>
